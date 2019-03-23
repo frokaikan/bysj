@@ -1,0 +1,354 @@
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <utility>
+#include <type_traits>
+#include <unistd.h>
+
+#define LOG_INFO
+#define FIFTEEN_1050
+
+// parse options
+inline void   set_bit(int &x, int bit) { if (!((1 << bit) & x)) x ^= (1 << bit); }
+inline void unset_bit(int &x, int bit) { if (  (1 << bit) & x ) x ^= (1 << bit); }
+struct io_info
+{
+    bool valid;
+    std::istream &in;
+    std::ofstream out; // must be a file
+	std::ostream &log, &err;
+    int close_info;
+    io_info():
+        valid(true),
+        in(std::cin),
+        log(std::clog),
+        err(std::cerr)
+    {out.open("JPLEPH", std::ios_base::out | std::ios_base::binary);}
+    io_info& operator<<(const int &x)   { out.write(reinterpret_cast<const char*>(&x), 4); return *this; }
+    io_info& operator<<(const double &x) { out.write(reinterpret_cast<const char*>(&x), 8); return *this; }
+    io_info& operator<<(const std::string &x) { out << x; for ( int _i = x.size() ; _i < 6 ; ++_i ) out << ' '; return *this; }
+    void add_out(int size) { int out_len = out.tellp(); while (out_len % size) {out << '\0'; ++out_len;} }
+    void new_block(int size) { int out_len = out.tellp(); do {out << '\0'; ++out_len;} while (out_len % size); }
+    void nxt_block(int size) { int out_len = out.tellp(); while (out_len % size) {out.seekp(1, std::ios_base::cur); ++out_len;} }
+    void seekp(int pos) { out.seekp(pos); }
+    void close() { out.close(); }
+};
+
+int main(int argc, char **argv)
+{
+    // parse options
+    io_info o;
+    // o.parse(argc, argv);
+    if (!o.valid)
+    {
+        o.err << "Usage :: " << argv[0] << " [-i [input]] [-o [output]] [-l [log]] [-e [error]]" << std::endl;
+        return 1;
+    }
+    
+    // temporary variables
+    std::string _;
+    
+    // constant
+    const int oldmax = 400;
+    const int nmax = 1000;
+    
+    // main function
+    int group;
+    int nrecl = 4;
+    double 
+        db2z = -99999999,
+        t1 = -99999999,
+        t2 = 99999999;
+    if (nrecl != 4 && nrecl != 1)
+    {
+        o.err << "Please set nrecl first!\nDefault : 4";
+        return 2;
+    }
+        
+    // readin KSIZE
+    int ksize;
+    o.in >> _ >> ksize;
+#ifdef LOG_INFO
+    o.log << "ksize = " << ksize << std::endl;
+#endif
+    int irecsz = nrecl * ksize;
+    
+    // readin NCOEFF
+    int ncoeff;
+    o.in >> _ >> ncoeff;
+    
+    _.clear();
+    // next group (1010)
+    while ( _ != "GROUP" ) o.in >> _;
+    o.in >> group;
+    if (group != 1010)
+    {
+        o.err << "ERROR header position 1010";
+        return 1010;
+    }
+    
+    // TTL
+    // Different from origin fortran
+    std::string ttl;
+    _.clear();
+    while (true)
+    {
+        o.in >> _;
+        if ( _ == "GROUP" ) break;
+        ttl += _ + ' ';
+    }
+    while ( static_cast<int>(ttl.size()) != 84*3) ttl += ' ';
+#ifdef LOG_INFO
+    o.log << ttl << std::endl;
+#endif
+
+    // next group (1030)
+    while ( _ != "GROUP" ) o.in >> _;
+    o.in >> group;
+    if (group != 1030)
+    {
+        o.err << "ERROR header position 1030";
+        return 1030;
+    }
+    
+    // SS
+    double ss[3];
+    for ( int _i = 0 ; _i < 3 ; ++_i ) o.in >> ss[_i];
+    
+    _.clear();
+    // next group (1040)
+    while ( _ != "GROUP" ) o.in >> _ ;
+    o.in >> group;
+    if (group != 1040)
+    {
+        o.err << "ERROR header position 1040";
+        return 1040;
+    }
+    
+    // CNAM
+    int N;
+    o.in >> N;
+    std::vector<std::string> cNam;
+    for ( int _i = 0 ; _i < N ; ++_i )
+    {
+        o.in >> _;
+        cNam.push_back(_);
+    }
+    int NCon = N;
+    
+    _.clear();
+    // next group (1041)
+    while ( _ != "GROUP" ) o.in >> _ ;
+    o.in >> group;
+    if (group != 1041)
+    {
+        o.err << "ERROR header position 1041";
+        return 1041;
+    }
+    
+    // CVAL
+    o.in >> N;
+    std::vector<double> cVal(N);
+    for ( int _i = 0 ; _i < N ; ++_i ) o.in >> cVal[_i];
+    double AU, EMRAT, NUMDE;
+    for ( int _i = 0 ; _i < N ; ++_i )
+    {
+        if (cNam[_i] == "AU") AU = cVal[_i];
+        if (cNam[_i] == "EMRAT") EMRAT = cVal[_i];
+        if (cNam[_i] == "DENUM" ) NUMDE = cVal[_i];
+    }
+    o.log << AU << ' ' << EMRAT << ' ' << NUMDE << std::endl;
+#ifdef LOG_INFO
+    for ( int _i = 0 ; _i < N ; ++_i ) o.log << cNam[_i] << "\t=\t" << cVal[_i] << std::endl;
+#endif
+    
+    _.clear();
+    // next group (1050)
+    while ( _ != "GROUP" ) o.in >> _ ;
+    o.in >> group;
+    if (group != 1050)
+    {
+        o.err << "ERROR header position 1050";
+        return 1050;
+    }
+    
+    // IPT LPT RPT TPT
+    std::vector<int> vec1;
+    while (true)
+    {
+        o.in >> _;
+        if ( _ == "GROUP" ) break;
+        vec1.push_back(std::stoi(_));
+    }
+    std::vector<int>::iterator p1 = vec1.begin();
+    int sz = vec1.size();
+    int ipt[3][12], lpt[3], rpt[3], tpt[3];
+    for ( int _i = 0 ; _i < 3 ; ++_i )
+    {
+        for ( int _j = 0 ; _j < 12 ; ++_j ) ipt[_i][_j] = *p1++;
+        lpt[_i] = *p1++;
+        if (sz == 3*15)
+        {
+            rpt[_i] = *p1++;
+            tpt[_i] = *p1++;
+        }
+        else if (sz == 3*13)
+        {
+            rpt[_i] = tpt[_i] = 0;
+        }
+        else
+        {
+            o.err << "UNKNOWN GROUP 1050 size " << sz << std::endl;
+            return 10501;
+        }
+    }
+    
+    // next group (1070) and last group
+    while ( _ != "GROUP" ) o.in >> _ ;
+    o.in >> group;
+    if (group != 1070)
+    {
+        o.err << "ERROR header position 1070";
+        return 1070;
+    }
+    
+    // header_pre
+    o.new_block(irecsz);
+    o.new_block(irecsz);
+    
+    // ephemeris
+    int nrw;
+    o.in >> nrw >> ncoeff;
+    std::vector<double> db;
+    for ( int _i = 0 ; _i < ncoeff ; _i += 3 )
+    {
+        int kp2 = std::min(_i+3, ncoeff);
+        for ( int _j = _i ; _j < kp2 ; ++_j )
+        {
+            while (static_cast<int>(db.size()) <= _j) db.push_back(0);
+            o.in >> db[_j];
+            if (!o.in)
+            {
+                o.err << "ERROR Reading 1st coeffs" << std::endl;
+                return 10701;
+            }
+        }
+    }
+    bool first = true;
+    int nrout = 0;
+    while (o.in && db[1] < t2)
+    {
+        if (2 * ncoeff != ksize)
+        {
+            o.err << "2*ncoeff != ksize" << std::endl;
+            return 10702;
+        }
+        if (db[1] >= t1 && db[0] >= db2z)
+        {
+            if (first)
+            {
+                db2z = db[0];
+                first = false;
+            }
+            if (db[0] != db2z)
+            {
+                o.err << nrw << "nd do not overlap or abut" << std::endl;
+                return 10703;
+            }
+            db2z = db[1];
+            ++nrout;
+            for ( int _i = 0 ; _i < ncoeff ; ++_i ) o << db[_i];
+            o.add_out(irecsz);
+            if (!o.out)
+            {
+                o.err << nrout << "th record ERROR" << std::endl;
+                return 10704;
+            }
+            if (nrout == 1)
+            {
+                ss[0] = db[0];
+                ss[2] = db[1] - db[0];
+            }
+            ss[1] = db[1];
+#ifdef LOG_INFO
+            if (nrout % 100 == 1)
+            {
+                if (db[0] >= t1)
+                    o.log << nrout << " EPHEMERIS RECORDS WRITTEN.  LAST JED = " << db[1] << std::endl;
+                else
+                    o.log << " Searching for first requested record... " << std::endl;
+            }
+#endif
+        }
+        o.in >> nrw >> ncoeff;
+        if (o.in) for ( int _i = 0 ; _i < ncoeff ; _i += 3 )
+        {
+            int kp2 = std::min(_i+3, ncoeff);
+            for ( int _j = _i ; _j < kp2 ; ++_j )
+            {
+                while (static_cast<int>(db.size()) <= _j) db.push_back(0);
+                o.in >> db[_j];
+            }
+            if (!o.in)
+            {
+                o.err << "ERROR Reading nth coeffs" << std::endl;
+                return 10701;
+            }
+        }
+    }
+#ifdef LOG_INFO
+    o.log << nrout << " EPHEMERIS RECORDS WRITTEN.  LAST JED = " << db[1];
+#endif
+
+    // header
+    o.seekp(0);
+    if (NCon <= oldmax)
+    {
+        o << ttl;
+        for ( int _i = 0 ; _i < oldmax ; ++_i ) o << cNam[_i];
+        for ( int _i = 0 ; _i < 3 ; ++_i ) o << ss[_i];
+        o << NCon << AU << EMRAT;
+        for ( int _j = 0 ; _j < 3 ; ++_j ) for ( int _i = 0 ; _i < 12 ; ++_i ) o << ipt[_i][_j];
+        o << static_cast<int>(NUMDE);
+        for ( int _i = 0 ; _i < 3 ; ++_i ) o << lpt[_i];    
+        if ( sz == 3*15 )
+        {
+            for ( int _i = 0 ; _i < 3 ; ++_i ) o << rpt[_i];        
+            for ( int _i = 0 ; _i < 3 ; ++_i ) o << tpt[_i];
+        }
+    }
+    else
+    {
+        o << ttl;
+        for ( int _i = 0 ; _i < oldmax ; ++_i ) o << cNam[_i];
+        for ( int _i = 0 ; _i < 3 ; ++_i ) o << ss[_i];
+        o << NCon << AU << EMRAT;
+        for ( int _j = 0 ; _j < 12 ; ++_j ) for ( int _i = 0 ; _i < 3 ; ++_i ) o << ipt[_i][_j];
+        o << static_cast<int>(NUMDE);
+        for ( int _i = 0 ; _i < 3 ; ++_i ) o << lpt[_i];
+        for ( int _i = oldmax ; _i < NCon ; ++_i ) o << cNam[_i];
+        if ( sz == 3*15 )
+        {
+            for ( int _i = 0 ; _i < 3 ; ++_i ) o << rpt[_i];        
+            for ( int _i = 0 ; _i < 3 ; ++_i ) o << tpt[_i];
+        }
+    }
+    o.nxt_block(irecsz);
+    if (!o.out)
+    {
+        o.err << "1st record not written because of error" << std::endl;
+        return 10709;
+    }
+    if (NCon <= oldmax) for ( int _i = 0 ; _i < oldmax ; ++_i ) o << cVal[_i];
+    else for ( int _i = 0 ; _i < NCon ; ++_i ) o << cVal[_i];
+    o.add_out(irecsz);
+    if (!o.out)
+    {
+        o.err << "2nd record not written because of error" << std::endl;
+        return 10709;
+    }
+    o.close();
+    return 0;
+}
