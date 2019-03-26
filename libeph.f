@@ -825,7 +825,7 @@ C     If INQUIRE does not work, IRECSZ will usually be left at 0
       endif
 
       KSIZE = IRECSZ/NRECL
-      print*, KSIZE
+      print*, 'KSIZE= ',KSIZE
       return
 
       end

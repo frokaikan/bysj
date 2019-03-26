@@ -92,6 +92,12 @@ int main(int argc, char **argv)
     // TTL
     // Different from origin fortran
     std::string ttl;
+    ttl += "KSIZE=";
+    int cnt_ksize = 0;
+    for ( int kk = ksize ; kk ; kk /= 10 ) ++cnt_ksize;
+    for ( int cc = 6-cnt_ksize ; cc ; --cc ) ttl += ' ';
+    ttl += std::to_string(ksize);
+    ttl += ' ';
     _.clear();
     while (true)
     {

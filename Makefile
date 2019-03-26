@@ -11,6 +11,6 @@ all :
 test :
 	python makeit.py test
 	
-.PHONY : clear
-clear :
-	python makeit.py clear
+.PHONY : clean
+clean :
+	python makeit.py clean
