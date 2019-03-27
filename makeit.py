@@ -77,10 +77,9 @@ def get_ksize_from_header():
         ksize = re.search(r'\d+', f.readline())
     return ksize
 
-def ksize_namfil():
+def ksize_namfil(opts):
     ksize = 0
     namfil = ''
-    opts = dict(getopt(sys.argv[1:], 'k:n:')[0])
     if '-k' in opts:
         try:
             ksize = int(opts['-k'])
@@ -106,17 +105,20 @@ def ksize_namfil():
         _n = _n.strip()
         if _n:
             if all((x not in _n) for x in '/\\<>|?*:"')：
-                namfil = _n
+                if _n.endswith('EPH'):
+                    namfil = _n
+                else:
+                    print('EPH file must ends with EPH. Use default : JPLEPH')
             else:
-                print('/\\<>|?*:" Can\'t in NAMFIL. Use default : JPLEPH.')
+                print('/\\<>|?*:" Can\'t in NAMFIL. Use default : JPLEPH')
                 namfil = 'JPLEPH'
         else:
             print('Use default : JPLEPH')
             namfil = 'JPLEPH'
     return ksize, namfil
     
-def gen_fsizer3():
-    ksize, namfil = ksize_namfil()
+def gen_fsizer3(opts):
+    ksize, namfil = ksize_namfil(opts)
     fsizer3 = ''
     with open('fsizer3.f.config', 'rt') as f:
         fsizer3 = f.read()
@@ -153,13 +155,22 @@ def merge_asc():
                 fw.write(sub(fc.read()))
     os.chdir('..')
 
-#unfinish!!!    
+#unfinish!!!
+#asc2eph.cpp should also be change. 
 def main():
-    op = ''
-    if len(sys.argv) >= 2:
-        op = sys.argv[1]
-    else:
-        raise NotImplementedError('Usage :: python %s <op>'%__file__)
+    __doc__ = '''
+Usage :: python %s op [-k ksize] [-n namfil]
+op : make test clean
+    make : compile the program and generate EPH file.
+    test : test the EPH file by .testpo
+    clean : clean all binary files, result files and intermidiate files.
+-k ksize : (Needed by <make>, No default value)
+    declare ksize
+-n namfil : (Needed by <make> and <test>, default : JPLEPH)
+    declare your EPH file name (Must ends with EPH, e.g. {JPLEPH} {JPL.EPH} {JPLEPH.EPH} {inpop.EPH})
+    '''%__file__
+    opts = getopt(sys.argv[1:])
+    ksize, namfil = ksize_namfil
     if op == 'make':
         if not os.path.exists('output'):
             os.mkdir('output')
@@ -179,7 +190,7 @@ def main():
                     os.remove('output/in.eph')
                 shutil.copy('source/%s'%in_f, 'output/in.eph')
             os.chdir('output')
-            print('gen JPLEPH...')
+            print('gen %s...')
             os.system('asc2eph.exe < in.eph')
             os.chdir('..')
         elif c == 3:

@@ -639,8 +639,8 @@ C     The user must select one of the following by deleting the 'C' in column 1
 C ************************************************************************
 
 C        call FSIZER1(NRECL,KSIZE,NRFILE,NAMFIL)
-        call FSIZER2(NRECL,KSIZE,NRFILE,NAMFIL)
-C        call FSIZER3(NRECL,KSIZE,NRFILE,NAMFIL)
+C        call FSIZER2(NRECL,KSIZE,NRFILE,NAMFIL)
+         call FSIZER3(NRECL,KSIZE,NRFILE,NAMFIL)
 
 C ************************************************************************
 C ************************************************************************
