@@ -6,50 +6,55 @@ import os
 import sys
 import shutil
 import re
-import subprocess
+from getopt import getopt
 
 def check_input():
     os.chdir('source')
     if os.path.exists('in.eph'):
         os.remove('in.eph')
     files = [x for x in os.listdir('.')]
-    # No directory, all files must be '.header', '.asc', '.in', '.testpo', or 'JPLEPH'
+    # No directory, all files must be '*.header', '*.asc', '*.in', '*.testpo', or '*EPH'
     for f in files:
         if os.path.isdir(f):
             print('%s is a directory'%f)
             return 0
-        if not (f.endswith('.header') or f.endswith('.asc') or f == 'JPLEPH' or f.endswith('.in') or f.endswith('.testpo')):
+        if not (f.endswith('.header') or f.endswith('.asc') or f.endswith('.in') or f.endswith('.testpo') or f.endswith('EPH')):
             print('Invalid file : %s'%f)
             return 0
-    # Must be one .header file
-    header_cnt = 0
+    # part 1 : ONE *.header and some *.asc
+    # At most ONE .header file
+    header = 0
     for f in files:
         if f.endswith('.header'):
-            header_cnt += 1
-    if header_cnt != 1:
-        print('%d .header file'%header_cnt)
+            header += 1
+    if header_cnt > 1:
+        print('%d .header file. At most ONE.'%header_cnt)
         return 0
-    # any JPLEPH?
-    jpleph = False
-    for f in files:
-        if f == 'JPLEPH':
-            jpleph = True
-            break
     # any .asc?
     asc = False
-    for f in files:
-        if f.endswith('.asc'):
-            asc = True
-            break
+    if header:
+        for f in files:
+            if f.endswith('.asc'):
+                asc = True
+                break
+    # part 2 : ONE *.in
     # any .in?
     in_f = 0
     for f in files:
         if f.endswith('.in'):
             in_f += 1
     if in_f > 1:
-        raise NotImplementedError('at most ONE .in')
+        print('%d .in file. At most ONE.'%in_f)
+        return 0
+    # part 3 : *EPH
+    EPH = 0
+    for f in files:
+        if f.endswith('EPH'):
+            EPH += 1
+    if EPH > 1:
+        print('%d EPH file. At most ONE.'%EPH)
     # One of the Three options?
-    if jpleph + asc + in_f != 1:
+    if asc + in_f + EPH != 1:
         print('You can choose just ONE options. See README.md')
         return 0
     os.chdir('..')
@@ -62,6 +67,64 @@ def check_input():
     else:
         raise NotImplementedError("Unknown Error. Please contact me by 541240857@qq.com")
 
+def get_ksize_from_header():
+    os.chdir('source')
+    header_file = [x for x in os.listdir('.') if x.endswith('.header')]
+    if len(header_file != 1)
+        return 0
+    header_file = header_file[0]
+    with open(header_file, 'rt') as f:
+        ksize = re.search(r'\d+', f.readline())
+    return ksize
+
+def ksize_namfil():
+    ksize = 0
+    namfil = ''
+    opts = dict(getopt(sys.argv[1:], 'k:n:')[0])
+    if '-k' in opts:
+        try:
+            ksize = int(opts['-k'])
+        except ValueError:
+            print('Invalid ksize.')
+            return 0
+    else:
+        _k = get_ksize_from_header()
+        if _k:
+            ksize = _k
+        else:
+            while True:
+                try:
+                    ksize = int(input('Not found ksize. Your KSIZE is : '))
+                except ValueError:
+                    print('Invalid ksize. Please enter again...')
+                else:
+                    break
+    if '-n' in opts:
+        namfil = opts['-n']
+    else:
+        _n = input('Input your NAMFIL. (Or JPLEPH by default) : ')
+        _n = _n.strip()
+        if _n:
+            if all((x not in _n) for x in '/\\<>|?*:"')：
+                namfil = _n
+            else:
+                print('/\\<>|?*:" Can\'t in NAMFIL. Use default : JPLEPH.')
+                namfil = 'JPLEPH'
+        else:
+            print('Use default : JPLEPH')
+            namfil = 'JPLEPH'
+    return ksize, namfil
+    
+def gen_fsizer3():
+    ksize, namfil = ksize_namfil()
+    fsizer3 = ''
+    with open('fsizer3.f.config', 'rt') as f:
+        fsizer3 = f.read()
+    fsizer3 = re.sub('__namfil__', namfil, fsizer3)
+    fsizer3 = re.sub('__ksize__', str(ksize), fsizer3)
+    with open('fsizer3.f', 'wt') as f:
+        f.write(fsizer3)
+    
 def do_compile():
     def c(out_file, in_file, command):
         if os.path.exists(out_file) and os.stat(out_file).st_mtime > os.stat(in_file).st_mtime:
@@ -70,7 +133,8 @@ def do_compile():
         os.system(command)
     c('output/asc2eph.exe', 'asc2eph.cpp', 'g++ -O3 -g3 -std=gnu++14 -o output/asc2eph.exe asc2eph.cpp')
     c('output/libeph.so', 'libeph.f', 'gfortran -O3 -g3 -fPIC -shared -o output/libeph.so libeph.f')
-    c('output/testeph.exe', 'testeph.f', 'gfortran -O3 -g3 -o output/testeph.exe testeph.f -L. -Loutput output/libeph.so')
+    c('output/fsizer3.so', 'FSIZER3.f', 'gfortran -O3 -g3 -fPIC -shared -o output/fsizer3.so fsizer3.f')
+    c('output/testeph.exe', 'testeph.f', 'gfortran -O3 -g3 -o output/testeph.exe testeph.f -L. -Loutput output/libeph.so output/fsizer3.so')
 
 def merge_asc():
     os.chdir('source')
@@ -88,7 +152,8 @@ def merge_asc():
             with open(f, 'rt') as fc:
                 fw.write(sub(fc.read()))
     os.chdir('..')
-    
+
+#unfinish!!!    
 def main():
     op = ''
     if len(sys.argv) >= 2:
