@@ -166,7 +166,6 @@ def merge_asc():
                 fw.write(sub(fc.read()))
     os.chdir('..')
 
-#unfinish!!! 
 def main():
     __doc__ = '''
 Usage :: python %s op [-k ksize] [-n namfil]
