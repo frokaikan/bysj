@@ -3,38 +3,9 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include <utility>
-#include <type_traits>
-#include <unistd.h>
+#include "asc2eph.hpp"
 
 #define LOG_INFO
-#define FIFTEEN_1050
-
-// parse options
-inline void   set_bit(int &x, int bit) { if (!((1 << bit) & x)) x ^= (1 << bit); }
-inline void unset_bit(int &x, int bit) { if (  (1 << bit) & x ) x ^= (1 << bit); }
-struct io_info
-{
-    bool valid;
-    std::istream &in;
-    std::ofstream out; // must be a file
-	std::ostream &log, &err;
-    int close_info;
-    io_info():
-        valid(true),
-        in(std::cin),
-        log(std::clog),
-        err(std::cerr)
-    {out.open("JPLEPH", std::ios_base::out | std::ios_base::binary);}
-    io_info& operator<<(const int &x)   { out.write(reinterpret_cast<const char*>(&x), 4); return *this; }
-    io_info& operator<<(const double &x) { out.write(reinterpret_cast<const char*>(&x), 8); return *this; }
-    io_info& operator<<(const std::string &x) { out << x; for ( int _i = x.size() ; _i < 6 ; ++_i ) out << ' '; return *this; }
-    void add_out(int size) { int out_len = out.tellp(); while (out_len % size) {out << '\0'; ++out_len;} }
-    void new_block(int size) { int out_len = out.tellp(); do {out << '\0'; ++out_len;} while (out_len % size); }
-    void nxt_block(int size) { int out_len = out.tellp(); while (out_len % size) {out.seekp(1, std::ios_base::cur); ++out_len;} }
-    void seekp(int pos) { out.seekp(pos); }
-    void close() { out.close(); }
-};
 
 int main(int argc, char **argv)
 {
