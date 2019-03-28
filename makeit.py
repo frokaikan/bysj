@@ -231,6 +231,10 @@ op : make test clean
     elif op == 'clean':
         if os.path.exists('output'):
             shutil.rmtree('output')
+        if os.path.exists('asc2eph.hpp'):
+            os.remove('asc2eph.hpp')
+        if os.path.exists('fsizer3.f'):
+            os.remove('fsizer3.f')
     else:
         raise NotImplementedError('%s Not Implement!'%op)
         

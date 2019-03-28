@@ -1,3 +1,5 @@
 source/
 output/
 ~*
+asc2eph.hpp
+fsizer3.f
