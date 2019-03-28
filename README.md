@@ -23,7 +23,7 @@ It's free to use, you can use or change it without my authorization.<br>
     6. find your JPLEPH file at "output/" directory. The outputs are :
         + asc2eph.so :: the Shared Object (Dynamic Link Library) used by asc2eph.exe.  
         + asc2eph.exe (Need asc2eph.so) :: change your .in file to EPH binary file.  
-        + <namfil> :: the binary EPH file.  
+        + "namfil" :: the binary EPH file.  
         + libeph.so :: the Shared Object (Dynamic Link Library) contains all JPL functions (except fsizer3).  
         + fsizer3.so :: the Shared Object (Dynamic Link Library) contains function fsizer3.  
         + testeph.exe (Need libeph.so fsizer3.so) :: test your JPLEPH file.  
