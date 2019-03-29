@@ -3,7 +3,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include "asc2eph.hpp"
+#include "asc2eph_struct.cpp"
 
 #define LOG_INFO
 

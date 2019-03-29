@@ -6,7 +6,7 @@ import os
 import sys
 import shutil
 import re
-from getopt import getopt
+from getopt import gnu_getopt
 
 def check_input():
     os.chdir('source')
@@ -27,7 +27,7 @@ def check_input():
     for f in files:
         if f.endswith('.header'):
             header += 1
-    if header_cnt > 1:
+    if header > 1:
         print('%d .header file. At most ONE.'%header_cnt)
         return 0
     # any .asc?
@@ -73,7 +73,8 @@ def get_ksize_from_header():
     header_file = [x for x in os.listdir('.') if x.endswith('.header')]
     if len(header_file) == 1:
         with open(header_file[0], 'rt') as f:
-            ksize = re.search(r'\d+', f.readline())
+            ksize = re.search(r'\d+', f.readline()).group(0)
+            print('Found ksize at %s : %s'%(header_file[0], ksize))
     os.chdir('..')
     return ksize
     
@@ -91,6 +92,7 @@ def ksize_namfil(opts):
     namfil = ''
     if '-k' in opts:
         ksize = opts['-k']
+        print('ksize set by user : %s'%ksize)
     else:
         _k = get_ksize_from_header()
         if _k:
@@ -99,6 +101,7 @@ def ksize_namfil(opts):
             ksize = input('Not found ksize. KSIZE = ')
     if '-n' in opts:
         namfil = opts['-n']
+        print('namfil set by user : %s'%namfil)
     else:
         _n = get_namfil_from_source()
         if _n:
@@ -111,10 +114,8 @@ def ksize_namfil(opts):
         ksize = int(ksize)
     except ValueError:
         raise ValueError('Invalid ksize')
-    if all((x not in namfil) for x in '/\\<>|?*:"')：
-        if namfil.endswith('EPH'):
-            namfil = _n
-        else:
+    if all((x not in namfil) for x in '/\\<>|?*:"'):
+        if not namfil.endswith('EPH'):
             raise ValueError('eph file must ends with EPH.')
     else:
         raise ValueError('Invalid namfil')
@@ -131,10 +132,10 @@ def gen_fsizer3(ksize, namfil):
     
 def gen_asc2eph(namfil):
     asc2eph = ''
-    with open('asc2eph.hpp.config', 'rt') as f:
+    with open('asc2eph_struct.cpp.config', 'rt') as f:
         asc2eph = f.read()
     asc2eph = re.sub('__namfil__', namfil, asc2eph)
-    with open('asc2eph.hpp', 'wt') as f:
+    with open('asc2eph_struct.cpp', 'wt') as f:
         f.write(asc2eph)
     
 def do_compile():
@@ -143,11 +144,16 @@ def do_compile():
             return
         print('run : %s'%command)
         os.system(command)
-    c('output/asc2eph.so', 'asc2eph.hpp', 'g++ -O3 -g3 -fPIC -shared -std=gnu++14 -o output/asc2eph.so asc2eph.hpp')
-    c('output/asc2eph.exe', 'asc2eph.cpp', 'g++ -O3 -g3 -std=gnu++14 -o output/asc2eph.exe asc2eph.cpp -L. -Loutput output/asc2eph.so')
-    c('output/libeph.so', 'libeph.f', 'gfortran -O3 -g3 -fPIC -shared -o output/libeph.so libeph.f')
-    c('output/fsizer3.so', 'FSIZER3.f', 'gfortran -O3 -g3 -fPIC -shared -o output/fsizer3.so fsizer3.f')
-    c('output/testeph.exe', 'testeph.f', 'gfortran -O3 -g3 -o output/testeph.exe testeph.f -L. -Loutput output/libeph.so output/fsizer3.so')
+    c('output/asc2eph_struct.o', 'asc2eph_struct.cpp', 
+        'g++ -O3 -c -fPIC -std=gnu++14 -o output/asc2eph_struct.o asc2eph_struct.cpp')
+    c('output/asc2eph.exe', 'asc2eph.cpp', 
+        'g++ -O3 -std=gnu++14 -o output/asc2eph.exe asc2eph.cpp output/asc2eph_struct.o')
+    c('output/fsizer3.o', 'FSIZER3.f', 
+        'gfortran -O3 -c -fPIC -o output/fsizer3.o fsizer3.f')
+    c('output/libeph.o', 'libeph.f', 
+        'gfortran -O3 -c -fPIC -o output/libeph.o libeph.f')
+    c('output/testeph.exe', 'testeph.f', 
+        'gfortran -O3 -o output/testeph.exe testeph.f output/libeph.o output/fsizer3.o')
 
 def merge_asc():
     os.chdir('source')
@@ -178,16 +184,19 @@ op : make test clean
 -n namfil : (Needed by <make>)
     declare your EPH file name (Must ends with EPH, e.g. {JPLEPH} {JPL.EPH} {JPLEPH.EPH} {inpop.EPH})
     '''%__file__
-    opts, op = getopt(sys.argv[1:])
+    args = [] if len(sys.argv) == 1 else sys.argv[1:]
+    opts, op = gnu_getopt(args, 'k:n:')
     opts = dict(opts)
     if len(op) != 1:
         raise NotImplementedError('You can just set ONE operation in <make> <test> <clean>')
     op = op[0]
     if op == 'make':
+        c = check_input()
         ksize, namfil = ksize_namfil(opts)
         if not os.path.exists('output'):
             os.mkdir('output')
-        c = check_input()
+        gen_asc2eph(namfil)
+        gen_fsizer3(ksize, namfil)
         do_compile()
         if c == 0:
             raise NotImplementedError('Invalid input. Please check "source/" directory.')
@@ -231,8 +240,8 @@ op : make test clean
     elif op == 'clean':
         if os.path.exists('output'):
             shutil.rmtree('output')
-        if os.path.exists('asc2eph.hpp'):
-            os.remove('asc2eph.hpp')
+        if os.path.exists('asc2eph_struct.cpp'):
+            os.remove('asc2eph_struct.cpp')
         if os.path.exists('fsizer3.f'):
             os.remove('fsizer3.f')
     else:
