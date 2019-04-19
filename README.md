@@ -1,6 +1,6 @@
 # program BINDING_EPH  
 author : frokaikan  
-It's free to use, you can use or change it without my authorization.<br>  
+It's free to use, you can use or change it without my authorization.    
 ************************
 ## How to use this program?
 + You need :  
@@ -27,7 +27,7 @@ It's free to use, you can use or change it without my authorization.<br>
         + libeph.so :: the Shared Object (Dynamic Link Library) contains all JPL functions (except fsizer3).  
         + fsizer3.so :: the Shared Object (Dynamic Link Library) contains function fsizer3.  
         + testeph.exe (Need libeph.so fsizer3.so) :: test your JPLEPH file.  
-    7. (Just for test) type  to run testeph.  
+    7. (Just for test) type `python makeit.py test` to run testeph.  
   
 If you have any problem, please send an e-mail to "541240857@qq.com". I'll reply you ASAP.  
 Thanks for using this program.
