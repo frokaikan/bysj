@@ -175,10 +175,11 @@ def merge_asc():
 def main():
     __doc__ = '''
 Usage :: python %s op [-k ksize] [-n namfil]
-op : make test clean
+op : make test clean endian
     make : compile the program and generate EPH file.
     test : test the EPH file by .testpo
     clean : clean all binary files, result files and intermidiate files.
+    endian : check your CPU byte order (Little endian or Big endian)
 -k ksize : (Needed by <make>)
     declare ksize
 -n namfil : (Needed by <make>)
@@ -213,7 +214,8 @@ op : make test clean
                 shutil.copy('source/%s'%in_f, 'output/full_asc.in')
             os.chdir('output')
             print('gen %s...'%namfil)
-            os.system('asc2eph.exe < full_asc.in')
+            ASC2EPH = os.path.join('.', 'asc2eph.exe')
+            os.system('%s < full_asc.in'%ASC2EPH)
             os.chdir('..')
         elif c == 3:
             ephfile = [x for x in os.listdir('source') if x.endswith('EPH')][1]
@@ -235,7 +237,8 @@ op : make test clean
         testpo = testpo[0]
         shutil.copy('source/%s'%testpo, 'output/TESTPO')
         os.chdir('output')
-        os.system(r'testeph.exe < TESTPO')
+        TESTEPH = os.path.join('.', 'testeph.exe')
+        os.system(r'%s < TESTPO'%TESTEPH)
         os.chdir('..')
     elif op == 'clean':
         if os.path.exists('output'):
@@ -244,6 +247,10 @@ op : make test clean
             os.remove('asc2eph_struct.cpp')
         if os.path.exists('fsizer3.f'):
             os.remove('fsizer3.f')
+    elif op == 'endian':
+        os.system('g++ -O3 -std=gnu++14 -o test_endian.exe test_endian.cpp')
+        os.system(os.path.join('.', 'test_endian.exe'))
+        os.remove('test_endian.exe')
     else:
         raise NotImplementedError('%s Not Implement!'%op)
         

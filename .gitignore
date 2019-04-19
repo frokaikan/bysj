@@ -1,5 +1,5 @@
 source/
 output/
 ~*
-asc2eph.hpp
+asc2eph_struct.cpp
 fsizer3.f
