@@ -62,7 +62,7 @@ def check_input():
         return 1
     elif in_f:
         return 2
-    elif jpleph:
+    elif EPH:
         return 3
     else:
         raise NotImplementedError("Unknown Error. Please contact me by 541240857@qq.com")
@@ -139,21 +139,14 @@ def gen_asc2eph(namfil):
         f.write(asc2eph)
     
 def do_compile():
-    def c(out_file, in_file, command):
-        if os.path.exists(out_file) and os.stat(out_file).st_mtime > os.stat(in_file).st_mtime:
-            return
+    def c(command):
         print('run : %s'%command)
         os.system(command)
-    c('output/asc2eph_struct.o', 'asc2eph_struct.cpp', 
-        'g++ -O3 -c -fPIC -std=gnu++14 -o output/asc2eph_struct.o asc2eph_struct.cpp')
-    c('output/asc2eph.exe', 'asc2eph.cpp', 
-        'g++ -O3 -std=gnu++14 -o output/asc2eph.exe asc2eph.cpp output/asc2eph_struct.o')
-    c('output/fsizer3.o', 'FSIZER3.f', 
-        'gfortran -O3 -c -fPIC -o output/fsizer3.o fsizer3.f')
-    c('output/libeph.o', 'libeph.f', 
-        'gfortran -O3 -c -fPIC -o output/libeph.o libeph.f')
-    c('output/testeph.exe', 'testeph.f', 
-        'gfortran -O3 -o output/testeph.exe testeph.f output/libeph.o output/fsizer3.o')
+    c('g++ -O3 -c -fPIC -std=gnu++14 -o output/asc2eph_struct.o asc2eph_struct.cpp')
+    c('g++ -O3 -std=gnu++14 -o output/asc2eph.exe asc2eph.cpp output/asc2eph_struct.o')
+    c('gfortran -O3 -c -fPIC -o output/fsizer3.o fsizer3.f')
+    c('gfortran -O3 -c -fPIC -o output/libeph.o libeph.f')
+    c('gfortran -O3 -o output/testeph.exe testeph.f output/libeph.o output/fsizer3.o')
 
 def merge_asc():
     os.chdir('source')
@@ -189,7 +182,7 @@ op : make test clean endian
     opts, op = gnu_getopt(args, 'k:n:')
     opts = dict(opts)
     if len(op) != 1:
-        raise NotImplementedError('You can just set ONE operation in <make> <test> <clean>')
+        raise NotImplementedError('You can just set ONE operation in <make> <test> <clean> <endian>')
     op = op[0]
     if op == 'make':
         c = check_input()
@@ -218,7 +211,7 @@ op : make test clean endian
             os.system('%s < full_asc.in'%ASC2EPH)
             os.chdir('..')
         elif c == 3:
-            ephfile = [x for x in os.listdir('source') if x.endswith('EPH')][1]
+            ephfile = [x for x in os.listdir('source') if x.endswith('EPH')][0]
             if ephfile != namfil:
                 raise ValueError('Found eph : <%s>, but namfil == <%s>.'%(ephfile, namfil))
             if os.path.exists('output/%s'%namfil):

@@ -711,7 +711,6 @@ C ************************************************************************
 
       if(NUMDE .eq. 0) stop 'DENUM not found by READHD in constants'
       write(6,*)
-      write(6,'(a27,i3.3)')' JPL planetary ephemeris DE',NUMDE
       write(6,*)'Requested output units are :'
       if(AU_KM)then
         if(IAU_AU)then
