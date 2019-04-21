@@ -196,8 +196,22 @@ int main(int argc, char **argv)
     o.new_block(irecsz);
     
     // ephemeris
+    // pass ending 0.0000000000000000D+00
     int nrw;
-    o.in >> nrw >> ncoeff;
+    while (o.in)
+    {
+        bool flag = true;
+        o.in >> _;
+        for (char x : _)
+        {
+            if (not ('0' <= x && x <= '9')) break;
+            flag = false;
+        }
+        if (!flag) break;
+    }
+    
+    nrw = std::stoi(_);
+    o.in >> ncoeff;
     std::vector<double> db;
     for ( int _i = 0 ; _i < ncoeff ; _i += 3 )
     {
@@ -259,7 +273,26 @@ int main(int argc, char **argv)
             }
 #endif
         }
-        o.in >> nrw >> ncoeff;
+        
+        // pass ending 0.0000000000000000D+00
+        while (o.in)
+        {
+            bool flag = true;
+            o.in >> _;
+            for (char x : _)
+            {
+                if (not ('0' <= x && x <= '9'))
+                {
+                    flag = false;
+                    break;
+                }
+            }
+            if (flag) break;
+        }
+    
+        nrw = std::stoi(_);
+        o.in >> ncoeff;
+        
         if (o.in) for ( int _i = 0 ; _i < ncoeff ; _i += 3 )
         {
             int kp2 = std::min(_i+3, ncoeff);
@@ -280,6 +313,12 @@ int main(int argc, char **argv)
 #endif
 
     // header
+    const std::string ZERO = {'\0', '\0', '\0', '\0', '\0', '\0'};
+    for ( int _i = cNam.size() ; _i < oldmax ; ++_i )
+    {
+        cNam.push_back(ZERO);
+        cVal.push_back(0);
+    }
     o.seekp(0);
     if (NCon <= oldmax)
     {
@@ -287,7 +326,7 @@ int main(int argc, char **argv)
         for ( int _i = 0 ; _i < oldmax ; ++_i ) o << cNam[_i];
         for ( int _i = 0 ; _i < 3 ; ++_i ) o << ss[_i];
         o << NCon << AU << EMRAT;
-        for ( int _j = 0 ; _j < 3 ; ++_j ) for ( int _i = 0 ; _i < 12 ; ++_i ) o << ipt[_i][_j];
+        for ( int _j = 0 ; _j < 12 ; ++_j ) for ( int _i = 0 ; _i < 3 ; ++_i ) o << ipt[_i][_j];
         o << static_cast<int>(NUMDE);
         for ( int _i = 0 ; _i < 3 ; ++_i ) o << lpt[_i];    
         if ( sz == 3*15 )
