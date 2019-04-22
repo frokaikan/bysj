@@ -20,13 +20,12 @@ It's free to use, you can use or change it without my authorization.
         + Rename your binary file to "JPLEPH". (If you have DE format binary file)    
     4. (Just for test) Rename your testpo file to "xxx.testpo". If you don't have testpo file, ignore this step.  
     5. type `python makeit.py make -k <ksize> -n <namfil>` to generate EPH file.  
-    6. find your JPLEPH file at "output/" directory. The outputs are :
-        + asc2eph.so :: the Shared Object (Dynamic Link Library) used by asc2eph.exe.  
-        + asc2eph.exe (Need asc2eph.so) :: change your .in file to EPH binary file.  
+    6. find your JPLEPH file at "output/" directory. The outputs are : 
+        + asc2eph.exe :: change your .in file to EPH binary file.  
         + "namfil" :: the binary EPH file.  
-        + libeph.so :: the Shared Object (Dynamic Link Library) contains all JPL functions (except fsizer3).  
-        + fsizer3.so :: the Shared Object (Dynamic Link Library) contains function fsizer3.  
-        + testeph.exe (Need libeph.so fsizer3.so) :: test your JPLEPH file.  
+        + libeph.o :: the Object file contains all JPL functions (except fsizer3).  
+        + fsizer3.o :: the Object file contains function fsizer3.  
+        + testeph.exe :: test your JPLEPH file.  
     7. (Just for test) type `python makeit.py test` to run testeph.  
   
 If you have any problem, please send an e-mail to "541240857@qq.com". I'll reply you ASAP.  
