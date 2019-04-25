@@ -218,7 +218,6 @@ C++++++++++++++++++++++++++
       integer          NRREC / 0/
 
       save
-
 C++++++++++++++++++++++++++
 
 C     Main entry point PLEPH
@@ -539,7 +538,6 @@ C -- Only cases left involve neither Earth nor Moon
 C-----------------------------------------------------------------------
 
       entry PL_UNITS(AU_KM1, DAY_SEC1, IAU_AU1)
-
       AU_KM   = AU_KM1
       DAY_SEC = DAY_SEC1
       IAU_AU  = IAU_AU1
