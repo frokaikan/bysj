@@ -1,5 +1,6 @@
 # program BINDING_EPH  
 author : frokaikan  
+Lisence : GPL, Anti_996  
 It's free to use, you can use or change it without my authorization.    
 ************************
 ## How to use this program?

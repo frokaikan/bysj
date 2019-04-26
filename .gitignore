@@ -1,5 +1,13 @@
 source/
 output/
+others/
 ~*
 asc2eph_struct.cpp
 fsizer3.f
+**/*.o
+**/*.obj
+**/*.a
+**/*.lib
+**/*.so
+**/*.dll
+**/*.exe
