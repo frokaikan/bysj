@@ -1,6 +1,8 @@
 source/
 output/
 others/
+! others/cmp.cpp
+! others/ask.cpp
 ~*
 asc2eph_struct.cpp
 fsizer3.f
